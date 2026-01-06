@@ -37,6 +37,8 @@ If you have any questions, please contact the AlphaFold team at
 
 ## Installation with conda
 
+Installation tested on HMS O2 slurm cluster with `module load gcc/14.2.0 cuda/12.8`. `cudatoolkit` version may differ for your setup. Other packages installed as in original alphafold Dockerfile.
+
 ```bash
 # setup conda environment
 conda create --yes --name alphafold-latest python==3.11
