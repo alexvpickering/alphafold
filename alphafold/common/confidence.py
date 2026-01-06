@@ -18,6 +18,7 @@ import json
 from typing import Dict, Optional, Tuple
 
 from jax.scipy import special
+from jax import nn
 import numpy as np
 
 
@@ -33,7 +34,7 @@ def compute_plddt(logits: np.ndarray) -> np.ndarray:
   num_bins = logits.shape[-1]
   bin_width = 1.0 / num_bins
   bin_centers = np.arange(start=0.5 * bin_width, stop=1.0, step=bin_width)
-  probs = np.array(special.softmax(logits, axis=-1))
+  probs = np.array(nn.softmax(logits, axis=-1))
   predicted_lddt_ca = np.sum(probs * bin_centers[None, :], axis=-1)
   return predicted_lddt_ca * 100
 
