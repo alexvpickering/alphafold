@@ -35,29 +35,60 @@ If you have any questions, please contact the AlphaFold team at
 
 ![CASP14 predictions](imgs/casp14_predictions.gif)
 
-## Installation and running your first prediction
+## Installation with conda
 
-You will need a machine running Linux, AlphaFold does not support other
-operating systems. Full installation requires up to 3 TB of disk space to keep
-genetic databases (SSD storage is recommended) and a modern NVIDIA GPU (GPUs
-with more memory can predict larger protein structures).
+```bash
+# setup conda environment
+conda create --yes --name alphafold-latest python==3.11
+conda activate alphafold-latest
+conda install --yes --channel nvidia cudatoolkit=11.8.0
+conda install --yes --channel conda-forge openmm=8.0.0 pdbfixer
+conda install --yes --channel bioconda hmmer hhsuite==3.3.0 kalign2
 
-Please follow these steps:
+# clone repo
+git clone git@github.com:alexvpickering/alphafold.git
+cd alphafold
 
-1.  Install [Docker](https://www.docker.com/).
+# pip requirements
+conda install --yes pip
+pip3 install --upgrade pip --no-cache-dir
+pip3 install -r requirements.txt --no-cache-dir
+pip3 install --upgrade --no-cache-dir \
+      jax==0.4.26 \
+      jaxlib==0.4.26+cuda12.cudnn89 \
+      -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
-    *   Install
-        [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
-        for GPU support.
-    *   Setup running
-        [Docker as a non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user).
 
-1.  Clone this repository and `cd` into it.
+# download chemical properties
+wget -q -P common/ https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
+```
 
-    ```bash
-    git clone https://github.com/deepmind/alphafold.git
-    cd ./alphafold
-    ```
+## Running MSA seperately
+
+This only requires CPU. Original Alphafold2 code was adapted to support parallel MSA
+
+```
+python run_alphafold_msas_only.py \
+  --fasta_paths=PATH/TO/INPUT.fasta \
+  --output_dir=PATH/TO/output \
+  --data_dir=PATH/TO/DATABASES \
+  --max_template_date=2022-01-01
+```
+
+Then run predictions on pre-computed MSAs (use GPU for this):
+
+```
+bash run_alphafold.sh \
+-f PATH/TO/INPUT.fasta \
+-t 2022-01-01 \
+-c full_dbs \
+-m monomer \
+-p true \ # use pre-computed MSAs
+-o PATH/TO/output \
+-d PATH/TO/DATABASES
+```
+
+## Download genetic databases
 
 1.  Download genetic databases and model parameters:
 
@@ -82,71 +113,6 @@ Please follow these steps:
     *   It is possible to run AlphaFold with reduced databases; please refer to
         the [complete documentation](#genetic-databases).
 
-1.  Check that AlphaFold will be able to use a GPU by running:
-
-    ```bash
-    docker run --rm --gpus all nvidia/cuda:11.0-base nvidia-smi
-    ```
-
-    The output of this command should show a list of your GPUs. If it doesn't,
-    check if you followed all steps correctly when setting up the
-    [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
-    or take a look at the following
-    [NVIDIA Docker issue](https://github.com/NVIDIA/nvidia-docker/issues/1447#issuecomment-801479573).
-
-    If you wish to run AlphaFold using Singularity (a common containerization
-    platform on HPC systems) we recommend using some of the third party
-    Singularity setups as linked in
-    https://github.com/deepmind/alphafold/issues/10 or
-    https://github.com/deepmind/alphafold/issues/24.
-
-1.  Build the Docker image:
-
-    ```bash
-    docker build -f docker/Dockerfile -t alphafold .
-    ```
-
-    If you encounter the following error:
-
-    ```
-    W: GPG error: https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 InRelease: The following signatures couldn't be verified because the public key is not available: NO_PUBKEY A4B469963BF863CC
-    E: The repository 'https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64 InRelease' is not signed.
-    ```
-
-    use the workaround described in
-    https://github.com/deepmind/alphafold/issues/463#issuecomment-1124881779.
-
-1.  Install the `run_docker.py` dependencies. Note: You may optionally wish to
-    create a
-    [Python Virtual Environment](https://docs.python.org/3/tutorial/venv.html)
-    to prevent conflicts with your system's Python environment.
-
-    ```bash
-    pip3 install -r docker/requirements.txt
-    ```
-
-1.  Make sure that the output directory exists (the default is `/tmp/alphafold`)
-    and that you have sufficient permissions to write into it.
-
-1.  Run `run_docker.py` pointing to a FASTA file containing the protein
-    sequence(s) for which you wish to predict the structure (`--fasta_paths`
-    parameter). AlphaFold will search for the available templates before the
-    date specified by the `--max_template_date` parameter; this could be used to
-    avoid certain templates during modeling. `--data_dir` is the directory with
-    downloaded genetic databases and `--output_dir` is the absolute path to the
-    output directory.
-
-    ```bash
-    python3 docker/run_docker.py \
-      --fasta_paths=your_protein.fasta \
-      --max_template_date=2022-01-01 \
-      --data_dir=$DOWNLOAD_DIR \
-      --output_dir=/home/user/absolute_path_to_the_output_dir
-    ```
-
-1.  Once the run is over, the output directory shall contain predicted
-    structures of the target protein. Please check the documentation below for
-    additional options and troubleshooting tips.
 
 ### Genetic databases
 
