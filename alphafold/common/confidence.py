@@ -136,7 +136,7 @@ def compute_predicted_aligned_error(
       error for each pair of residues.
     max_predicted_aligned_error: The maximum predicted error possible.
   """
-  aligned_confidence_probs = np.array(special.softmax(logits, axis=-1))
+  aligned_confidence_probs = np.array(nn.softmax(logits, axis=-1))
   predicted_aligned_error, max_predicted_aligned_error = (
       _calculate_expected_aligned_error(
           alignment_confidence_breaks=breaks,
@@ -216,7 +216,7 @@ def predicted_tm_score(
   d0 = 1.24 * (clipped_num_res - 15) ** (1.0 / 3) - 1.8
 
   # Convert logits to probs.
-  probs = np.array(special.softmax(logits, axis=-1))
+  probs = np.array(nn.softmax(logits, axis=-1))
 
   # TM-Score term for every bin.
   tm_per_bin = 1.0 / (1 + np.square(bin_centers) / np.square(d0))
