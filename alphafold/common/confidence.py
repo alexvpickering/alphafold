@@ -17,7 +17,6 @@
 import json
 from typing import Dict, Optional, Tuple
 
-from jax.scipy import special
 from jax import nn
 import numpy as np
 
